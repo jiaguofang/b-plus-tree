@@ -1,4 +1,4 @@
 b-plus-tree
 ===========
 
-A Java B+ tree implementation
+A B+ tree implementation in Java for key-value store
