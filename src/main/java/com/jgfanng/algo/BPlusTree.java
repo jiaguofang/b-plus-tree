@@ -10,10 +10,24 @@ import java.util.Queue;
 
 public class BPlusTree<K extends Comparable<? super K>, V> {
 
+	public static enum RangePolicy {
+		EXCLUSIVE, INCLUSIVE
+	}
+
+	/**
+	 * The branching factor used when none specified in constructor.
+	 */
 	private static final int DEFAULT_BRANCHING_FACTOR = 128;
 
+	/**
+	 * The branching factor for the B+ tree, that measures the capacity of nodes
+	 * (i.e., the number of children nodes) for internal nodes in the tree.
+	 */
 	private int branchingFactor;
 
+	/**
+	 * The root node of the B+ tree.
+	 */
 	private Node root;
 
 	public BPlusTree() {
@@ -28,18 +42,67 @@ public class BPlusTree<K extends Comparable<? super K>, V> {
 		root = new LeafNode();
 	}
 
+	/**
+	 * Returns the value to which the specified key is associated, or
+	 * {@code null} if this tree contains no association for the key.
+	 *
+	 * <p>
+	 * A return value of {@code null} does not <i>necessarily</i> indicate that
+	 * the tree contains no association for the key; it's also possible that the
+	 * tree explicitly associates the key to {@code null}.
+	 * 
+	 * @param key
+	 *            the key whose associated value is to be returned
+	 * 
+	 * @return the value to which the specified key is associated, or
+	 *         {@code null} if this tree contains no association for the key
+	 */
 	public V search(K key) {
 		return root.getValue(key);
 	}
 
-	public List<V> searchRange(K key1, K key2) {
-		return root.getRange(key1, key2);
+	/**
+	 * Returns the values associated with the keys specified by the range:
+	 * {@code key1} and {@code key2}.
+	 * 
+	 * @param key1
+	 *            the start key of the range
+	 * @param policy1
+	 *            the range policy, {@link RangePolicy#EXCLUSIVE} or
+	 *            {@link RangePolicy#INCLUSIVE}
+	 * @param key2
+	 *            the end end of the range
+	 * @param policy2
+	 *            the range policy, {@link RangePolicy#EXCLUSIVE} or
+	 *            {@link RangePolicy#INCLUSIVE}
+	 * @return the values associated with the keys specified by the range:
+	 *         {@code key1} and {@code key2}
+	 */
+	public List<V> searchRange(K key1, RangePolicy policy1, K key2,
+			RangePolicy policy2) {
+		return root.getRange(key1, policy1, key2, policy2);
 	}
 
+	/**
+	 * Associates the specified value with the specified key in this tree. If
+	 * the tree previously contained a association for the key, the old value is
+	 * replaced.
+	 * 
+	 * @param key
+	 *            the key with which the specified value is to be associated
+	 * @param value
+	 *            the value to be associated with the specified key
+	 */
 	public void insert(K key, V value) {
 		root.insertValue(key, value);
 	}
 
+	/**
+	 * Removes the association for the specified key from this tree if present.
+	 * 
+	 * @param key
+	 *            the key whose association is to be removed from the tree
+	 */
 	public void delete(K key) {
 		root.deleteValue(key);
 	}
@@ -53,11 +116,11 @@ public class BPlusTree<K extends Comparable<? super K>, V> {
 			while (!queue.isEmpty()) {
 				List<Node> nodes = queue.remove();
 				sb.append('{');
-				Iterator<Node> iter = nodes.iterator();
-				while (iter.hasNext()) {
-					Node node = iter.next();
+				Iterator<Node> it = nodes.iterator();
+				while (it.hasNext()) {
+					Node node = it.next();
 					sb.append(node.toString());
-					if (iter.hasNext())
+					if (it.hasNext())
 						sb.append(", ");
 					if (node instanceof BPlusTree.InternalNode)
 						nextQueue.add(((InternalNode) node).children);
@@ -89,7 +152,8 @@ public class BPlusTree<K extends Comparable<? super K>, V> {
 
 		abstract K getFirstLeafKey();
 
-		abstract List<V> getRange(K key1, K key2);
+		abstract List<V> getRange(K key1, RangePolicy policy1, K key2,
+				RangePolicy policy2);
 
 		abstract void merge(Node sibling);
 
@@ -162,15 +226,18 @@ public class BPlusTree<K extends Comparable<? super K>, V> {
 		}
 
 		@Override
-		List<V> getRange(K key1, K key2) {
-			return getChild(key1).getRange(key1, key2);
+		List<V> getRange(K key1, RangePolicy policy1, K key2,
+				RangePolicy policy2) {
+			return getChild(key1).getRange(key1, policy1, key2, policy2);
 		}
 
 		@Override
 		void merge(Node sibling) {
-			keys.add(sibling.getFirstLeafKey());
-			keys.addAll(sibling.keys);
-			children.addAll(((InternalNode) sibling).children);
+			@SuppressWarnings("unchecked")
+			InternalNode node = (InternalNode) sibling;
+			keys.add(node.getFirstLeafKey());
+			keys.addAll(node.keys);
+			children.addAll(node.children);
 
 		}
 
@@ -291,16 +358,23 @@ public class BPlusTree<K extends Comparable<? super K>, V> {
 		}
 
 		@Override
-		List<V> getRange(K key1, K key2) {
+		List<V> getRange(K key1, RangePolicy policy1, K key2,
+				RangePolicy policy2) {
 			List<V> result = new LinkedList<V>();
 			LeafNode node = this;
 			while (node != null) {
-				for (int i = 0; i < keyNumber(); i++) {
-					int cmp1 = node.keys.get(i).compareTo(key1);
-					int cmp2 = node.keys.get(i).compareTo(key2);
-					if (cmp1 >= 0 && cmp2 <= 0)
-						result.add(node.values.get(i));
-					else if (cmp2 > 0)
+				Iterator<K> kIt = node.keys.iterator();
+				Iterator<V> vIt = node.values.iterator();
+				while (kIt.hasNext()) {
+					K key = kIt.next();
+					V value = vIt.next();
+					int cmp1 = key.compareTo(key1);
+					int cmp2 = key.compareTo(key2);
+					if (((policy1 == RangePolicy.EXCLUSIVE && cmp1 > 0) || (policy1 == RangePolicy.INCLUSIVE && cmp1 >= 0))
+							&& ((policy2 == RangePolicy.EXCLUSIVE && cmp2 < 0) || (policy2 == RangePolicy.INCLUSIVE && cmp2 <= 0)))
+						result.add(value);
+					else if ((policy2 == RangePolicy.EXCLUSIVE && cmp2 >= 0)
+							|| (policy2 == RangePolicy.INCLUSIVE && cmp2 > 0))
 						return result;
 				}
 				node = node.next;
@@ -310,10 +384,11 @@ public class BPlusTree<K extends Comparable<? super K>, V> {
 
 		@Override
 		void merge(Node sibling) {
-			keys.addAll(sibling.keys);
-			values.addAll(((LeafNode) sibling).values);
-
-			next = ((LeafNode) sibling).next;
+			@SuppressWarnings("unchecked")
+			LeafNode node = (LeafNode) sibling;
+			keys.addAll(node.keys);
+			values.addAll(node.values);
+			next = node.next;
 		}
 
 		@Override

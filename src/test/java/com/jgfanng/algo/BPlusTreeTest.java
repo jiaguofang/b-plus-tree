@@ -3,6 +3,8 @@ package com.jgfanng.algo;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.jgfanng.algo.BPlusTree.RangePolicy;
+
 public class BPlusTreeTest {
 	@Test
 	public void test() {
@@ -47,7 +49,21 @@ public class BPlusTreeTest {
 		bpt.insert(7, "h");
 		bpt.insert(8, "i");
 		bpt.insert(9, "j");
-		Assert.assertArrayEquals(bpt.searchRange(3, 7).toArray(), new String[] {
-				"d", "e", "f", "g", "h" });
+		Assert.assertArrayEquals(
+				bpt.searchRange(3, RangePolicy.EXCLUSIVE, 7,
+						RangePolicy.EXCLUSIVE).toArray(), new String[] { "e",
+						"f", "g" });
+		Assert.assertArrayEquals(
+				bpt.searchRange(3, RangePolicy.INCLUSIVE, 7,
+						RangePolicy.EXCLUSIVE).toArray(), new String[] { "d",
+						"e", "f", "g" });
+		Assert.assertArrayEquals(
+				bpt.searchRange(3, RangePolicy.EXCLUSIVE, 7,
+						RangePolicy.INCLUSIVE).toArray(), new String[] { "e",
+						"f", "g", "h" });
+		Assert.assertArrayEquals(
+				bpt.searchRange(3, RangePolicy.INCLUSIVE, 7,
+						RangePolicy.INCLUSIVE).toArray(), new String[] { "d",
+						"e", "f", "g", "h" });
 	}
 }
