@@ -1,6 +1,6 @@
 package com.jgfanng.algo;
 
-import com.jgfanng.algo.BPlusTree;
+
 import com.jgfanng.algo.BPlusTree.RangePolicy;
 
 import org.junit.Assert;
@@ -51,20 +51,21 @@ public class BPlusTreeTest {
 		bpt.insert(8, "i");
 		bpt.insert(9, "j");
 		Assert.assertArrayEquals(
-				bpt.searchRange(3, RangePolicy.EXCLUSIVE, 7,
-						RangePolicy.EXCLUSIVE).toArray(), new String[] { "e",
-						"f", "g" });
+			bpt.searchRange(3, RangePolicy.EXCLUSIVE, 7, 
+			RangePolicy.EXCLUSIVE).toArray(), 
+			new String[] { "e", "f", "g" });
 		Assert.assertArrayEquals(
-				bpt.searchRange(3, RangePolicy.INCLUSIVE, 7,
-						RangePolicy.EXCLUSIVE).toArray(), new String[] { "d",
-						"e", "f", "g" });
+			bpt.searchRange(3, RangePolicy.INCLUSIVE, 7,
+			RangePolicy.EXCLUSIVE).toArray(), new String[] { "d",
+			"e", "f", "g" });
 		Assert.assertArrayEquals(
-				bpt.searchRange(3, RangePolicy.EXCLUSIVE, 7,
-						RangePolicy.INCLUSIVE).toArray(), new String[] { "e",
-						"f", "g", "h" });
+			bpt.searchRange(3, RangePolicy.EXCLUSIVE, 7,
+			RangePolicy.INCLUSIVE).toArray(), new String[] { "e",
+			"f", "g", "h" });
 		Assert.assertArrayEquals(
-				bpt.searchRange(3, RangePolicy.INCLUSIVE, 7,
-						RangePolicy.INCLUSIVE).toArray(), new String[] { "d",
-						"e", "f", "g", "h" });
+			bpt.searchRange(3, RangePolicy.INCLUSIVE, 7,
+			angePolicy.INCLUSIVE).toArray(),
+			new String[] { "d",
+			"e", "f", "g", "h" });
 	}
 }
