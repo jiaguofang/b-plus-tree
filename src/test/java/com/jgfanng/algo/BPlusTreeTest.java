@@ -53,7 +53,7 @@ public class BPlusTreeTest {
 		Assert.assertArrayEquals(
 			bpt.searchRange(3, RangePolicy.EXCLUSIVE, 7, 
 			RangePolicy.EXCLUSIVE).toArray(), 
-			new String[] { "e", "f", "g" });
+			new String[] { "e", "f", "g" }); //This returns the string characters
 		Assert.assertArrayEquals(
 			bpt.searchRange(3, RangePolicy.INCLUSIVE, 7,
 			RangePolicy.EXCLUSIVE).toArray(), new String[] { "d",
